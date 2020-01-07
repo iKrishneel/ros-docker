@@ -1,0 +1,51 @@
+version: '3'
+
+networks:
+  ros:
+    driver: bridge
+    
+services:
+  # ros-master:
+  #   image: ros-kinetic
+  #   command:
+  #     - roscore
+  #   networks:
+  #     - ros
+  #   restart: always
+
+  ros-master:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    command:
+      - roscore
+    networks:
+      - ros
+
+  talker:
+    image: ros-kinetic
+    depends_on:
+      - ros-master
+    environment:
+      - "ROS_MASTER_URI=http://ros-master:11311"
+      - "ROS_HOSTNAME=talker"
+    volumes:
+      - ./workspace/:/kinetic
+    networks:
+      - ros
+    command: bash -c "catkin build && source ./devel/setup.bash && python src/test_pkg/scripts/talker.py"
+    restart: always
+
+  listener:
+    image: ros-kinetic
+    depends_on:
+      - ros-master
+    environment:
+      - "ROS_MASTER_URI=http://ros-master:11311"
+      - "ROS_HOSTNAME=listener"
+    volumes:
+      - /Users/krishneelchaudhary/Documents/programs/ros/workspace:/kinetic
+    command: bash -c "catkin build && source /kinetic/devel/setup.bash && python src/test_pkg/scripts/listener.py"
+    networks:
+      - ros
+    restart: always
